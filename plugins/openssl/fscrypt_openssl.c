@@ -85,6 +85,7 @@ static	size_t  OpenSSL_Random     (OpenSSLEngine * e, void* buf, size_t len);
 
 static  size_t      OpenSSL_HashCalc(OpenSSLEngine* e, FSHashAlg alg, const void* data, size_t len, uint8_t* md);
 
+static void            OpenSSL_CalculatePublicKey  (OpenSSLEngine* c, const FSPrivateKey* priv, FSPublicKey * k);
 static FSPrivateKey*   OpenSSL_NewPrivateKey   (OpenSSLEngine* c, FSCurve curve, const uint8_t * data, size_t length);
 static bool            OpenSSL_GenerateKeyPair (OpenSSLEngine* c, FSCurve curve,
                                                 FSPrivateKey** pPrivateKey, FSPublicKey * publicKey);
@@ -129,6 +130,7 @@ static FSEccKeyOps _keyOps = {
     OpenSSL_FreePrivateKey,
     OpenSSL_FreePublicKey,
     OpenSSL_ExportPublic,
+    OpenSSL_CalculatePublicKey,
     OpenSSL_ReconstructPublic,
     OpenSSL_DeriveKey
 };
@@ -241,6 +243,26 @@ static void OpenSSL_FreePublicKey  (OpenSSLEngine* c, FSPublicKey* k) {
     if(k->k){
         EC_KEY_free((EC_KEY*)k->k);
         k->k = NULL;
+    }
+}
+
+static void OpenSSL_CalculatePublicKey  (OpenSSLEngine* c, const FSPrivateKey* p, FSPublicKey * pub) {
+    if(pub->k == NULL || pub->k != p){
+        if(pub->k)
+            EC_KEY_free((EC_KEY*)pub->k);
+        EC_KEY * priv = (EC_KEY *)p;
+        EC_KEY_up_ref(priv);
+        pub->k = priv;
+        const EC_POINT* p = EC_KEY_get0_public_key(priv);
+        if(p == NULL){
+            const EC_GROUP* g = EC_KEY_get0_group(priv);
+            const BIGNUM* k = EC_KEY_get0_private_key(priv);
+            EC_POINT* pt = EC_POINT_new(g);
+            if (EC_POINT_mul(g, pt, k, NULL, NULL, NULL)) {
+                EC_KEY_set_public_key(priv, pt);
+            }
+            EC_POINT_free(pt);
+        }
     }
 }
 

@@ -105,6 +105,7 @@ FITSEC_EXPORT FSPrivateKey*   FSKey_ImportPrivate   (FSCrypt* e, FSCurve curve, 
 FITSEC_EXPORT void            FSKey_InitPublic 	    (FSPublicKey * k, FSCurve curve, FSPointType  pType, const uint8_t * x, const uint8_t * y);
 
 FITSEC_EXPORT FSPrivateKey*   FSKey_Generate        (FSCrypt* e, FSCurve curve, FSPublicKey * k);
+FITSEC_EXPORT bool            FSKey_CalculatePublic (FSCrypt* e, const FSPrivateKey* priv, FSPublicKey* pub);
 
 FITSEC_EXPORT void            FSKey_FreePrivate     (FSCrypt* e, FSPrivateKey* k);
 FITSEC_EXPORT void            FSKey_CleanPublic     (FSCrypt* e, FSPublicKey * k);

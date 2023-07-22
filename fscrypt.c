@@ -112,6 +112,11 @@ FITSEC_EXPORT bool FSKey_ReconstructPublic(FSCrypt* e, const FSPublicKey* rv, co
     return e->KeyOps->ReconstructPublic(e, (FSPublicKey*)rv, ca, hash);
 }
 
+FITSEC_EXPORT bool FSKey_CalculatePublic(FSCrypt* e, const FSPrivateKey* priv, FSPublicKey* pub)
+{
+    e->KeyOps->Calculate(e, priv, pub);
+}
+
 /*
 void FN_THROW(RuntimeException) FSEccPoint_Read(FSECPoint* p, FSCurve curve, const char** ptr, const char* end, int error)
 {
