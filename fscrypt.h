@@ -142,7 +142,7 @@ typedef enum {
 	FSSymmAlg_Max
 }FSSymmAlg;
 
-inline size_t FSSymm_KeySize(FSSymmAlg alg) {
+static inline size_t FSSymm_KeySize(FSSymmAlg alg) {
 	return 16;
 }
 
