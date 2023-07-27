@@ -114,7 +114,7 @@ FITSEC_EXPORT bool FSKey_ReconstructPublic(FSCrypt* e, const FSPublicKey* rv, co
 
 FITSEC_EXPORT bool FSKey_CalculatePublic(FSCrypt* e, const FSPrivateKey* priv, FSPublicKey* pub)
 {
-    e->KeyOps->Calculate(e, priv, pub);
+    return e->KeyOps->Calculate(e, priv, pub);
 }
 
 /*

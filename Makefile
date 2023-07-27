@@ -15,5 +15,6 @@ headers       := fscrypt.h fscrypt_plugins.h
 
 modules       := $(wildcard plugins/*)
 defines       := FSCRYPT_HAVE_ENCRYPTION
+predirs       := $(CSHAREDDIR)
 
 include $(CSHAREDDIR)/common.mk
