@@ -9,12 +9,12 @@ cflags      += -Wno-dangling-else -std=c99
 alibs        = $(PROJECT)
 solibs       = $(PROJECT)
 
-sources       := fscrypt.c
+sources       := fscrypt.c fsdatastorage.c
 
-headers       := fscrypt.h fscrypt_plugins.h
+headers       := fscrypt.h fscrypt_plugins.h fsdatastorage.h
 
 modules       := $(wildcard plugins/*)
 defines       := FSCRYPT_HAVE_ENCRYPTION
-predirs       := $(CSHAREDDIR)
+
 
 include $(CSHAREDDIR)/common.mk

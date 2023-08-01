@@ -67,15 +67,15 @@ typedef enum FSCurve {
 	FSCurve_Max
 }FSCurve;
 
-static inline bool FSCurveIs384(FSCurve curve) {
+static inline bool FSCurve_Is384(FSCurve curve) {
 	return (curve&0x02);
 }
 
-static inline size_t FSCurveFieldSize(FSCurve curve) {
+static inline size_t FSCurve_FieldSize(FSCurve curve) {
 	return (curve&0x02) ? 48 : 32;
 }
 
-static inline FSHashAlg FSCurveHashAlg(FSCurve curve) {
+static inline FSHashAlg FSCurve_HashAlg(FSCurve curve) {
 	return (curve&0x04) ? FS_SM3 : (curve&0x02) ? FS_SHA384 : FS_SHA256;
 }
 
