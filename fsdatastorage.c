@@ -43,6 +43,7 @@ FSDataStorage * FSDataStorage_Init (FSDataStorage * ds, const char * name, void 
         ds->name = name;
     }
     ds->free = destructor ? destructor : _do_nothing;
+    ds->user = user;
     ds->tree = NULL;
     cring_init(&ds->q);
     return ds;

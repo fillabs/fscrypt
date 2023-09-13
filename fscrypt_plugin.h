@@ -19,8 +19,8 @@ extern "C" {
     typedef void (FSRandom_Fn)(FSCrypt * e, void * ptr, size_t length);
 
     typedef struct {
-        bool  (*Sign)    (FSCrypt * e, const FSPrivateKey * k,
-                          FSSignature * s, const uint8_t * digest);
+        bool  (*Sign)    (FSCrypt * e, const FSPrivateKey * key,
+                          FSSignature * s, const uint8_t * digest, const uint8_t * k);
         bool  (*Verify)  (FSCrypt * e, const FSPublicKey * pk,
                           const FSSignature * s, const uint8_t * digest);
     }FSSignatureOps;

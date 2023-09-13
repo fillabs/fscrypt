@@ -74,7 +74,9 @@ FITSEC_EXPORT void FSKey_CleanPublic (FSCrypt* e, FSPublicKey * k)
 
 FITSEC_EXPORT FSPrivateKey*   FSKey_ImportPrivate (FSCrypt* e, FSCurve curve, const uint8_t * data, size_t len)
 {
-    return e->KeyOps->Import(e, curve, data, len);
+    if(data && len)
+        return e->KeyOps->Import(e, curve, data, len);
+    return NULL;
 }
 
 FITSEC_EXPORT FSPrivateKey*   FSKey_Generate        (FSCrypt* e, FSCurve curve, FSPublicKey * k)
@@ -161,14 +163,27 @@ void FN_THROW(RuntimeException) FSSignature_Read(FSSignature* s, const char** pt
 }
 */
 
-bool FITSEC_EXPORT FSSignature_Sign(FSCrypt* e, FSSignature * s, const FSPrivateKey* k, const uint8_t * digest)
+bool FITSEC_EXPORT FSSignature_Sign_ex(FSCrypt* e, FSSignature * s, const FSPrivateKey* key, const uint8_t * digest, const uint8_t * k)
 {
-    return e->SignatureOps->Sign(e, k, s, digest);
+    return e->SignatureOps->Sign(e, key, s, digest, k);
+}
+
+bool FITSEC_EXPORT FSSignature_Sign(FSCrypt* e, FSSignature * s, const FSPrivateKey* key, const uint8_t * digest)
+{
+    return e->SignatureOps->Sign(e, key, s, digest, NULL);
 }
 
 bool FITSEC_EXPORT FSSignature_Verify(FSCrypt* e, const FSSignature * s, const FSPublicKey* pk, const uint8_t * digest)
 {
     return e->SignatureOps->Verify(e, pk, s, digest);
+}
+static const char * _sym_names[] = {
+    "AES128_CCM",
+    "SM4_CCM"
+};
+
+const char * FSSymm_AlgName(FSSymmAlg alg){
+    return (alg < arraysize(_sym_names)) ? _sym_names[alg] : "UNKNOWN";
 }
 
 size_t FITSEC_EXPORT FSSymm_Encrypt(FSCrypt* e, FSSymmAlg alg,

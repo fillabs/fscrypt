@@ -126,7 +126,8 @@ typedef struct FSSignature {
     uint8_t * s;
 }FSSignature;
 
-FITSEC_EXPORT bool FSSignature_Sign(FSCrypt* e, FSSignature * s, const FSPrivateKey* k, const uint8_t * digest);
+FITSEC_EXPORT bool FSSignature_Sign(FSCrypt* e, FSSignature * s, const FSPrivateKey* key, const uint8_t * digest);
+FITSEC_EXPORT bool FSSignature_Sign_ex(FSCrypt* e, FSSignature * s, const FSPrivateKey* key, const uint8_t * digest, const uint8_t * k);
 
 FITSEC_EXPORT bool FSSignature_Verify(FSCrypt* e, const FSSignature * s, const FSPublicKey* pk, const uint8_t * digest);
 
@@ -145,6 +146,7 @@ typedef enum {
 static inline size_t FSSymm_KeySize(FSSymmAlg alg) {
 	return 16;
 }
+const char * FSSymm_AlgName(FSSymmAlg alg);
 
 FITSEC_EXPORT size_t FSSymm_Encrypt(FSCrypt* e, FSSymmAlg alg,
                                         const uint8_t* key, const uint8_t* nonce,

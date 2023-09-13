@@ -100,8 +100,8 @@ static size_t          OpenSSL_DeriveKey       (OpenSSLEngine* c, const FSPublic
 
 static bool            OpenSSL_ReconstructPublic (OpenSSLEngine* c, FSPublicKey* rv, const FSPublicKey * ca, const uint8_t * digest);
 
-static bool  OpenSSL_Sign    (OpenSSLEngine * e, const FSPrivateKey * k,
-                              FSSignature * s, const uint8_t * digest);
+static bool  OpenSSL_Sign    (OpenSSLEngine * e, const FSPrivateKey * key,
+                              FSSignature * s, const uint8_t * digest, const uint8_t * k);
 static bool  OpenSSL_Verify  (OpenSSLEngine * e, const FSPublicKey * pk,
                               const FSSignature * s, const uint8_t * digest);
 
@@ -222,6 +222,9 @@ static FSPrivateKey*   OpenSSL_NewPrivateKey   (OpenSSLEngine* e, FSCurve curve,
 
     k = EC_KEY_new();
     EC_KEY_set_group(k, group);
+    if(length <= 0){
+        length = (EC_GROUP_get_degree(group) + 7) / 8;
+    }
     if(data){
         BIGNUM * bn = BN_new();
         BN_bin2bn(data, (int)length, bn);
@@ -370,13 +373,21 @@ static bool  OpenSSL_Verify  (OpenSSLEngine * e, const FSPublicKey * pk,
 }
 
 static bool  OpenSSL_Sign    (OpenSSLEngine * e, const FSPrivateKey * pk,
-                            FSSignature * s, const uint8_t * digest)
+                            FSSignature * s, const uint8_t * digest, const uint8_t * k)
 {
-    EC_KEY * k = (EC_KEY *)pk;
-    const EC_GROUP* g = EC_KEY_get0_group((const EC_KEY*)k);
+    EC_KEY * key = (EC_KEY *)pk;
+    const EC_GROUP* g = EC_KEY_get0_group((const EC_KEY*)key);
     if (g) {
         int fsize = (EC_GROUP_get_degree(g) + 7) / 8;
-        ECDSA_SIG * sg = ECDSA_do_sign(digest, fsize, k);
+        BIGNUM * bk = NULL;
+        if(k){
+            bk = BN_new();
+            BN_bin2bn(k, fsize, bk);
+        }
+        ECDSA_SIG * sg = ECDSA_do_sign_ex(digest, fsize, bk, NULL, key);
+        if(bk){
+            BN_free(bk);
+        }
         if(sg){
             const BIGNUM *br = NULL;
             const BIGNUM *bs = NULL;
