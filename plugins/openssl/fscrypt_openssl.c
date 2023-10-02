@@ -28,6 +28,7 @@
 
 #include "cserialize.h"
 #include "cmem.h"
+#include "clog.h"
 
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
 static int BN_bn2binpad(const BIGNUM *a, unsigned char *to, int tolen)
@@ -215,12 +216,14 @@ static	bool    OpenSSL_DeinitEngine (OpenSSLEngine * e,  const char * param)
     return true;
 }
 
+#define KEY_TRACE(K,MSG) // mclog_info(KEY, "0x%p - %-20.20s %s:%d", K, MSG, __FILE__, __LINE__)
 static FSPrivateKey*   OpenSSL_NewPrivateKey   (OpenSSLEngine* e, FSCurve curve, const uint8_t * data, size_t length)
 {
     EC_KEY* k;
     const EC_GROUP* group = e->groups[curve];
 
     k = EC_KEY_new();
+    KEY_TRACE(k, "NEW");
     EC_KEY_set_group(k, group);
     if(length <= 0){
         length = (EC_GROUP_get_degree(group) + 7) / 8;
@@ -230,6 +233,7 @@ static FSPrivateKey*   OpenSSL_NewPrivateKey   (OpenSSLEngine* e, FSCurve curve,
         BN_bin2bn(data, (int)length, bn);
 
         if(!EC_KEY_set_private_key(k, bn)){
+            KEY_TRACE(k, "FREE");
             EC_KEY_free(k);
             k = NULL;
         }
@@ -239,11 +243,13 @@ static FSPrivateKey*   OpenSSL_NewPrivateKey   (OpenSSLEngine* e, FSCurve curve,
 }
 
 static void OpenSSL_FreePrivateKey  (OpenSSLEngine* c, FSPrivateKey* k) {
+    KEY_TRACE(k, "FREE");
     EC_KEY_free((EC_KEY*)k);
 }
 
 static void OpenSSL_FreePublicKey  (OpenSSLEngine* c, FSPublicKey* k) {
     if(k->k){
+        KEY_TRACE(k->k, "FREE");
         EC_KEY_free((EC_KEY*)k->k);
         k->k = NULL;
     }
@@ -251,11 +257,14 @@ static void OpenSSL_FreePublicKey  (OpenSSLEngine* c, FSPublicKey* k) {
 
 static bool OpenSSL_CalculatePublicKey  (OpenSSLEngine* c, const FSPrivateKey* p, FSPublicKey * pub) {
     if(pub->k == NULL || pub->k != p){
-        if(pub->k)
+        if(pub->k){
+            KEY_TRACE(pub->k, "FREE");
             EC_KEY_free((EC_KEY*)pub->k);
+        }
         EC_KEY * priv = (EC_KEY *)p;
         EC_KEY_up_ref(priv);
         pub->k = priv;
+        KEY_TRACE(pub->k, "UP");
         const EC_POINT* p = EC_KEY_get0_public_key(priv);
         if(p == NULL){
             const EC_GROUP* g = EC_KEY_get0_group(priv);
@@ -265,8 +274,8 @@ static bool OpenSSL_CalculatePublicKey  (OpenSSLEngine* c, const FSPrivateKey* p
                 EC_KEY_set_public_key(priv, pt);
             }
             EC_POINT_free(pt);
-            return true;
         }
+        return true;
     }
     return false;
 }
@@ -280,11 +289,13 @@ static bool            OpenSSL_GenerateKeyPair (OpenSSLEngine* e, FSCurve curve,
     EC_KEY* k = NULL;
     if (g) {
         k = EC_KEY_new();
+        KEY_TRACE(k, "NEW");
         EC_KEY_set_group(k, g);
         if ((ret = EC_KEY_generate_key(k))) {
             if(publicKey){
                 if (publicKey->k) {
                     EC_KEY_free(publicKey->k);
+                    KEY_TRACE(publicKey->k, "FREE");
                     publicKey->k = NULL;
                 }
                 const EC_POINT* p = EC_KEY_get0_public_key(k);
@@ -304,6 +315,7 @@ static bool            OpenSSL_GenerateKeyPair (OpenSSLEngine* e, FSCurve curve,
                     BN_free(y);
                     EC_KEY_up_ref(k);
                     publicKey->k = k;
+                    KEY_TRACE(publicKey->k, "UP");
                 }
             }
         }
@@ -311,6 +323,7 @@ static bool            OpenSSL_GenerateKeyPair (OpenSSLEngine* e, FSCurve curve,
             (*pPrivateKey) = (FSPrivateKey*)k;
         }
         else {
+            KEY_TRACE(k, "FREE");
             EC_KEY_free(k);
         }
     }
@@ -344,8 +357,10 @@ static EC_KEY* _initPublicKey(OpenSSLEngine* e, const FSPublicKey* pk) {
     }
     BN_clear_free(bnx);
     k = EC_KEY_new();
+    KEY_TRACE(k, "NEW");
     EC_KEY_set_group(k, g);
     if (!EC_KEY_set_public_key(k, pnt)) {
+        KEY_TRACE(k, "FREE");
         EC_KEY_free(k); k = NULL;
         EC_POINT_free(pnt);
         return false;
@@ -451,7 +466,10 @@ static bool            OpenSSL_ExportPublic    (OpenSSLEngine* e, FSCurve curve,
     if (publicKey->k != _priv) {
         if(publicKey->k != NULL){
             EC_KEY_free(publicKey->k);
+            KEY_TRACE(publicKey->k, "FREE");
+
         }
+        KEY_TRACE(priv, "NEW");        
         EC_KEY_up_ref(priv);
         publicKey->k = priv;
     }
@@ -473,12 +491,10 @@ static bool            OpenSSL_ExportPublic    (OpenSSLEngine* e, FSCurve curve,
     x = BN_new(); y = BN_new();
     if (EC_POINT_get_affine_coordinates(g, p, x, y, NULL)) {
         BN_bn2binpad(x, publicKey->point.x, fsize);
-        if (publicKey->point.type == FS_UNCOMPRESSED) {
-            if (publicKey->point.y) {
-                BN_bn2binpad(y, publicKey->point.y, fsize);
-            }
+        if (publicKey->point.y) {
+            BN_bn2binpad(y, publicKey->point.y, fsize);
         }
-        else if (publicKey->point.type & 2) {
+        if (publicKey->point.type & 2) {
             publicKey->point.type = FS_COMPRESSED_LSB_Y_0 + (BN_is_odd(y) ? 1 : 0);
         }
     }
