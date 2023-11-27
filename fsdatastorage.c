@@ -1,7 +1,12 @@
 #include "fsdatastorage.h"
-
+#define FS_STOREDDATA_DEBUG
 #include <cmem.h>
 #include <cstr.h>
+
+#ifdef FS_STOREDDATA_DEBUG
+#include <stdio.h>
+#define PrHID8 cPrefixUint64 "X"
+#endif
 
 static int _FSDataItem_compare_with_key (const FSDataItem * node, const uint64_t * pkey)
 {
@@ -20,7 +25,7 @@ static void _FSDataItem_purge(FSDataStorage * storage, uint32_t curTime)
         if(d->end >= curTime)
             break;
 #ifdef FS_STOREDDATA_DEBUG
-        fprintf(stderr, "%-5.5s [%u] EXP " PrHID8 "(%u):", storage->name, curTime, d->key, d->endTime);
+        fprintf(stderr, "%-5.5s [%u] EXP " PrHID8 "(%u):", storage->name, curTime, d->key, d->end);
         for(int i=0; i < 8; i++) fputc(d->data[0], stderr);
         fputc('\n', stderr); 
 #endif
@@ -52,9 +57,12 @@ FSDataStorage * FSDataStorage_Init (FSDataStorage * ds, const char * name, void 
 void FSDataStorage_Clean(FSDataStorage * ds)
 {
     ds->tree = NULL;
-    cring_foreach(cring_t, r, ds->q){
-        ds->free(cring_cast(FSDataItem, q, r), ds->user);
+    cring_t * r = ds->q.next;
+    while(r != &ds->q){
+        r = r->next;
+        ds->free(cring_cast(FSDataItem, q, r->prev), ds->user);
     }
+    cring_init(&ds->q);
     if(ds->name == (const char*)(ds+1)){
         free(ds);
     }
@@ -71,7 +79,7 @@ FSDataItem * FSDataItem_New(size_t len)
 void FSDataItem_Renew(FSDataStorage * storage, uint32_t curTime, FSDataItem * d, uint32_t duration)
 {
 #ifdef FS_STOREDDATA_DEBUG
-    fprintf(stderr, "%-5.5s [%u] UPD " PrHID8 " (%u)", storage->name, curTime, d->key, d->endTime);
+    fprintf(stderr, "%-5.5s [%u] UPD " PrHID8 " (%u)", storage->name, curTime, d->key, d->end);
     for(int i=0; i < 8; i++) fprintf(stderr,  "%02X", d->data[i]);
     fputc('\n', stderr); 
 #endif
@@ -93,7 +101,7 @@ void FSDataItem_Put (FSDataStorage * storage, uint32_t curTime, FSDataItem * d, 
     }
     d->end = curTime + duration;
 #ifdef FS_STOREDDATA_DEBUG
-    fprintf(stderr, "%-5.5s [%u] PUT " PrHID8 " (%u)", storage->name, curTime, d->key, d->endTime);
+    fprintf(stderr, "%-5.5s [%u] PUT " PrHID8 " (%u)", storage->name, curTime, d->key, d->end);
     for(int i=0; i < 8; i++) fprintf(stderr,  "%02X", d->data[i]);
     fputc('\n', stderr); 
 #endif
@@ -101,10 +109,11 @@ void FSDataItem_Put (FSDataStorage * storage, uint32_t curTime, FSDataItem * d, 
     FSDataItem * o = (FSDataItem *)ctree_splay_add(&storage->tree, _FSDataItem_compare_with_node, &d->node, true);
     if(d != o){
 #ifdef FS_STOREDDATA_DEBUG
-        fprintf(stderr, "               RM  OLD " PrHID8 " (%u)", o->key, o->endTime);
+        fprintf(stderr, "               RM  OLD " PrHID8 " (%u)", o->key, o->end);
         for(int i=0; i < 8; i++) fprintf(stderr,  "%02X", o->data[i]);
         fputc('\n', stderr); 
 #endif
+        cring_erase(&o->q);
         storage->free(o, storage->user);
     }
     cring_enqueue(&storage->q, &d->q);
@@ -118,7 +127,7 @@ FSDataItem *  FSDataItem_Get (FSDataStorage * storage, uint32_t curTime, uint64_
     FSDataItem * d = (FSDataItem *)ctree_splay_del(&storage->tree, _FSDataItem_compare_with_key, &key);
     if(d){
 #ifdef FS_STOREDDATA_DEBUG
-        fprintf(stderr, "%-5.5s [%u] GET " PrHID8 " (0x%u)", storage->name, curTime, d->key, d->endTime);
+        fprintf(stderr, "%-5.5s [%u] GET " PrHID8 " (0x%u)", storage->name, curTime, d->key, d->end);
         for(int i=0; i < 8; i++) fprintf(stderr,  "%02X", d->data[i]);
         fputc('\n', stderr); 
 #endif
@@ -139,7 +148,7 @@ FSDataItem *  FSDataItem_Find (FSDataStorage * storage, uint32_t curTime, uint64
     FSDataItem * d = (FSDataItem *)ctree_splay_find(&storage->tree, _FSDataItem_compare_with_key, &key);
 #ifdef FS_STOREDDATA_DEBUG
     if(d){
-        fprintf(stderr, "%-5.5s [%u] FND " PrHID8 " (%u)", storage->name, curTime, d->key, d->endTime);
+        fprintf(stderr, "%-5.5s [%u] FND " PrHID8 " (%u)", storage->name, curTime, d->key, d->end);
         for(int i=0; i < 8; i++) fprintf(stderr,  "%02X", d->data[i]);
         fputc('\n', stderr); 
     }else{
@@ -152,7 +161,7 @@ FSDataItem *  FSDataItem_Find (FSDataStorage * storage, uint32_t curTime, uint64
 void FSDataItem_Del  (FSDataStorage * storage, uint32_t curTime, FSDataItem * d)
 {
 #ifdef FS_STOREDDATA_DEBUG
-    fprintf(stderr, "%-5.5s [%u] DEL " PrHID8 " (%u)\n", storage->name, curTime, d->key, d->endTime);
+    fprintf(stderr, "%-5.5s [%u] DEL " PrHID8 " (%u)\n", storage->name, curTime, d->key, d->end);
     for(int i=0; i < 8; i++) fprintf(stderr,  "%02X", d->data[i]);
     fputc('\n', stderr); 
 #endif
