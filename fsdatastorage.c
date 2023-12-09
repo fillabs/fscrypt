@@ -10,16 +10,16 @@
 
 static int _FSDataItem_compare_with_key (const FSDataItem * node, const uint64_t * pkey)
 {
-    return (node->key - *pkey);
+    return (int)(node->key - *pkey);
 }
 static int _FSDataItem_compare_with_node (const FSDataItem * node, const FSDataItem * value)
 {
-    return (node->key - value->key);
+    return (int)(node->key - value->key);
 }
 
 static void _FSDataItem_purge(FSDataStorage * storage, uint32_t curTime)
 {
-    cring_t * r = cring_prev(&storage->q);
+    cring_t * r = storage->q.prev;
     while(r != &storage->q){
         FSDataItem * d = cring_cast(FSDataItem, q, r);
         if(d->end >= curTime)
@@ -37,11 +37,14 @@ static void _FSDataItem_purge(FSDataStorage * storage, uint32_t curTime)
 
 static void _do_nothing(void*n) {}
 
+FSDS_EXPORT
 FSDataStorage * FSDataStorage_Init (FSDataStorage * ds, const char * name, void * const destructor, void * const user)
 {
     if(ds == NULL) {
-        int l = cstrlen(name);
-        ds = cnew_ex(FSDataStorage, l + 1);
+        size_t l = cstrlen(name);
+        if (NULL == (ds = cnew_ex(FSDataStorage, l + 1))) {
+            return NULL;
+        }
         ds->name = (const char*)(ds + 1);
         cstrcpy((char*)ds->name, name);
     }else{
@@ -54,6 +57,7 @@ FSDataStorage * FSDataStorage_Init (FSDataStorage * ds, const char * name, void 
     return ds;
 }
 
+FSDS_EXPORT
 void FSDataStorage_Clean(FSDataStorage * ds)
 {
     ds->tree = NULL;
@@ -68,6 +72,7 @@ void FSDataStorage_Clean(FSDataStorage * ds)
     }
 }
 
+FSDS_EXPORT
 FSDataItem * FSDataItem_New(size_t len)
 {
     FSDataItem * d = cnew0_ex(FSDataItem, len);
@@ -76,6 +81,7 @@ FSDataItem * FSDataItem_New(size_t len)
     return d;
 }
 
+FSDS_EXPORT
 void FSDataItem_Renew(FSDataStorage * storage, uint32_t curTime, FSDataItem * d, uint32_t duration)
 {
 #ifdef FS_STOREDDATA_DEBUG
@@ -92,6 +98,8 @@ void FSDataItem_Renew(FSDataStorage * storage, uint32_t curTime, FSDataItem * d,
     d->end = curTime + duration;
     cring_enqueue(&storage->q, &d->q);
 }
+
+FSDS_EXPORT
 void FSDataItem_Put (FSDataStorage * storage, uint32_t curTime, FSDataItem * d, uint32_t duration)
 {
     if(curTime){
@@ -119,6 +127,7 @@ void FSDataItem_Put (FSDataStorage * storage, uint32_t curTime, FSDataItem * d, 
     cring_enqueue(&storage->q, &d->q);
 }
 
+FSDS_EXPORT
 FSDataItem *  FSDataItem_Get (FSDataStorage * storage, uint32_t curTime, uint64_t key)
 {
     if(curTime){
@@ -140,6 +149,7 @@ FSDataItem *  FSDataItem_Get (FSDataStorage * storage, uint32_t curTime, uint64_
     return d;
 }
 
+FSDS_EXPORT
 FSDataItem *  FSDataItem_Find (FSDataStorage * storage, uint32_t curTime, uint64_t key)
 {
     if(curTime){
@@ -158,6 +168,7 @@ FSDataItem *  FSDataItem_Find (FSDataStorage * storage, uint32_t curTime, uint64
     return d;
 }
 
+FSDS_EXPORT
 void FSDataItem_Del  (FSDataStorage * storage, uint32_t curTime, FSDataItem * d)
 {
 #ifdef FS_STOREDDATA_DEBUG

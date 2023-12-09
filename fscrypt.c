@@ -15,7 +15,9 @@
 #include <assert.h>
 
 static FSCrypt* _e = NULL;
-void FITSEC_EXPORT FSCrypt_Register(FSCrypt* e)
+
+FSCRYPT_EXPORT
+void FSCrypt_Register(FSCrypt* e)
 {
     e->_next = _e;
     _e = e;
@@ -25,7 +27,8 @@ void FITSEC_EXPORT FSCrypt_Register(FSCrypt* e)
 #define FS_ECC_DEFAULT_ENGINE "openssl"
 #endif
 
-FITSEC_EXPORT FSCrypt* FSCrypt_FindEngine(const char* name)
+FSCRYPT_EXPORT
+FSCrypt* FSCrypt_FindEngine(const char* name)
 {
     FSCrypt* e = _e;
     if (name == NULL)
@@ -37,7 +40,8 @@ FITSEC_EXPORT FSCrypt* FSCrypt_FindEngine(const char* name)
     return e;
 }
 
-FITSEC_EXPORT bool FSCrypt_InitEngine( FSCrypt* const e, const char * params)
+FSCRYPT_EXPORT
+bool FSCrypt_InitEngine( FSCrypt* const e, const char * params)
 {
     if(e && e->Init){
         return e->Init(e, params);
@@ -45,7 +49,8 @@ FITSEC_EXPORT bool FSCrypt_InitEngine( FSCrypt* const e, const char * params)
     return true;
 }
 
-FITSEC_EXPORT bool FSCrypt_DeinitEngine( FSCrypt* const e, const char * params)
+FSCRYPT_EXPORT
+bool FSCrypt_DeinitEngine( FSCrypt* const e, const char * params)
 {
     if(e && e->Deinit){
         return e->Deinit(e, params);
@@ -53,7 +58,8 @@ FITSEC_EXPORT bool FSCrypt_DeinitEngine( FSCrypt* const e, const char * params)
     return true;
 }
 
-FITSEC_EXPORT void FSKey_InitPublic (FSPublicKey * k, FSCurve curve, FSPointType  pType, const uint8_t * x, const uint8_t * y)
+FSCRYPT_EXPORT
+void FSKey_InitPublic (FSPublicKey * k, FSCurve curve, FSPointType  pType, const uint8_t * x, const uint8_t * y)
 {
     k->k = NULL;
     k->curve = curve;
@@ -62,24 +68,28 @@ FITSEC_EXPORT void FSKey_InitPublic (FSPublicKey * k, FSCurve curve, FSPointType
     k->point.y = (uint8_t*) ((pType == FS_UNCOMPRESSED) ? y : NULL);
 }
 
-FITSEC_EXPORT bool FSKey_ExportPublic (FSCrypt* e, FSCurve curve, const FSPrivateKey * pK, FSPublicKey * k)
+FSCRYPT_EXPORT
+bool FSKey_ExportPublic (FSCrypt* e, FSCurve curve, const FSPrivateKey * pK, FSPublicKey * k)
 {
     return e->KeyOps->ExportPublic(e, curve, pK, k);
 }
 
-FITSEC_EXPORT void FSKey_CleanPublic (FSCrypt* e, FSPublicKey * k)
+FSCRYPT_EXPORT
+void FSKey_CleanPublic (FSCrypt* e, FSPublicKey * k)
 {
     e->KeyOps->FreePublic(e, k);
 }
 
-FITSEC_EXPORT FSPrivateKey*   FSKey_ImportPrivate (FSCrypt* e, FSCurve curve, const uint8_t * data, size_t len)
+FSCRYPT_EXPORT
+FSPrivateKey*   FSKey_ImportPrivate (FSCrypt* e, FSCurve curve, const uint8_t * data, size_t len)
 {
     if(data && len)
         return e->KeyOps->Import(e, curve, data, len);
     return NULL;
 }
 
-FITSEC_EXPORT FSPrivateKey*   FSKey_Generate        (FSCrypt* e, FSCurve curve, FSPublicKey * k)
+FSCRYPT_EXPORT
+FSPrivateKey*   FSKey_Generate        (FSCrypt* e, FSCurve curve, FSPublicKey * k)
 {
     FSPrivateKey* pK = NULL;
     if(!e->KeyOps->Generate(e, curve, &pK, k)) {
@@ -88,17 +98,20 @@ FITSEC_EXPORT FSPrivateKey*   FSKey_Generate        (FSCrypt* e, FSCurve curve, 
     return pK;
 }
 
-FITSEC_EXPORT void FSKey_FreePrivate     (FSCrypt* e, FSPrivateKey* k)
+FSCRYPT_EXPORT
+void FSKey_FreePrivate     (FSCrypt* e, FSPrivateKey* k)
 {
     e->KeyOps->FreePrivate(e, k);
 }
 
-FITSEC_EXPORT void FS_Random(FSCrypt* e, void* ptr, size_t const len)
+FSCRYPT_EXPORT
+void FS_Random(FSCrypt* e, void* ptr, size_t const len)
 {
     e->Random(e, ptr, len);
 }
 
-FITSEC_EXPORT size_t FSKey_Derive(FSCrypt* e, const FSPublicKey* k, const FSPrivateKey* pK,
+FSCRYPT_EXPORT
+size_t FSKey_Derive(FSCrypt* e, const FSPublicKey* k, const FSPrivateKey* pK,
     const void* salt, size_t salt_len,
     void* digest, size_t digest_len)
 {
@@ -109,12 +122,14 @@ FITSEC_EXPORT size_t FSKey_Derive(FSCrypt* e, const FSPublicKey* k, const FSPriv
 #endif
 }
 
-FITSEC_EXPORT bool FSKey_ReconstructPublic(FSCrypt* e, const FSPublicKey* rv, const FSPublicKey* ca, const unsigned char * hash)
+FSCRYPT_EXPORT
+bool FSKey_ReconstructPublic(FSCrypt* e, const FSPublicKey* rv, const FSPublicKey* ca, const unsigned char * hash)
 {
     return e->KeyOps->ReconstructPublic(e, (FSPublicKey*)rv, ca, hash);
 }
 
-FITSEC_EXPORT bool FSKey_CalculatePublic(FSCrypt* e, const FSPrivateKey* priv, FSPublicKey* pub)
+FSCRYPT_EXPORT
+bool FSKey_CalculatePublic(FSCrypt* e, const FSPrivateKey* priv, FSPublicKey* pub)
 {
     return e->KeyOps->Calculate(e, priv, pub);
 }
@@ -163,17 +178,20 @@ void FN_THROW(RuntimeException) FSSignature_Read(FSSignature* s, const char** pt
 }
 */
 
-bool FITSEC_EXPORT FSSignature_Sign_ex(FSCrypt* e, FSSignature * s, const FSPrivateKey* key, const uint8_t * digest, const uint8_t * k)
+FSCRYPT_EXPORT
+bool FSSignature_Sign_ex(FSCrypt* e, FSSignature * s, const FSPrivateKey* key, const uint8_t * digest, const uint8_t * k)
 {
     return e->SignatureOps->Sign(e, key, s, digest, k);
 }
 
-bool FITSEC_EXPORT FSSignature_Sign(FSCrypt* e, FSSignature * s, const FSPrivateKey* key, const uint8_t * digest)
+FSCRYPT_EXPORT
+bool FSSignature_Sign(FSCrypt* e, FSSignature * s, const FSPrivateKey* key, const uint8_t * digest)
 {
     return e->SignatureOps->Sign(e, key, s, digest, NULL);
 }
 
-bool FITSEC_EXPORT FSSignature_Verify(FSCrypt* e, const FSSignature * s, const FSPublicKey* pk, const uint8_t * digest)
+FSCRYPT_EXPORT
+bool FSSignature_Verify(FSCrypt* e, const FSSignature * s, const FSPublicKey* pk, const uint8_t * digest)
 {
     return e->SignatureOps->Verify(e, pk, s, digest);
 }
@@ -182,11 +200,13 @@ static const char * _sym_names[] = {
     "SM4_CCM"
 };
 
+FSCRYPT_EXPORT
 const char * FSSymm_AlgName(FSSymmAlg alg){
     return (alg < arraysize(_sym_names)) ? _sym_names[alg] : "UNKNOWN";
 }
 
-size_t FITSEC_EXPORT FSSymm_Encrypt(FSCrypt* e, FSSymmAlg alg,
+FSCRYPT_EXPORT
+size_t FSSymm_Encrypt(FSCrypt* e, FSSymmAlg alg,
     const uint8_t* key, const uint8_t* nonce,
     const uint8_t* in_buf, size_t in_size,
     uint8_t* out_buf, size_t out_size)
@@ -198,7 +218,8 @@ size_t FITSEC_EXPORT FSSymm_Encrypt(FSCrypt* e, FSSymmAlg alg,
 #endif
 }
 
-size_t FITSEC_EXPORT FSSymm_Decrypt(FSCrypt* e, FSSymmAlg alg,
+FSCRYPT_EXPORT
+size_t FSSymm_Decrypt(FSCrypt* e, FSSymmAlg alg,
     const uint8_t* key, const uint8_t* nonce,
     const uint8_t* in_buf, size_t in_size,
     uint8_t* out_buf, size_t out_size)
@@ -210,7 +231,8 @@ size_t FITSEC_EXPORT FSSymm_Decrypt(FSCrypt* e, FSSymmAlg alg,
 #endif
 }
 
-size_t FITSEC_EXPORT FSCrypt_MAC(FSCrypt* e, FSMAC alg, const uint8_t* data, size_t size, const uint8_t* key, size_t key_len, uint8_t* out)
+FSCRYPT_EXPORT
+size_t FSCrypt_MAC(FSCrypt* e, FSMAC alg, const uint8_t* data, size_t size, const uint8_t* key, size_t key_len, uint8_t* out)
 {
 #ifdef FSCRYPT_HAVE_ENCRYPTION
     return e->MACOps->mac(e, alg, data, size, key, key_len, out);
@@ -218,7 +240,8 @@ size_t FITSEC_EXPORT FSCrypt_MAC(FSCrypt* e, FSMAC alg, const uint8_t* data, siz
     return 0;
 }
 
-size_t FITSEC_EXPORT FSHash_Calc(FSCrypt* e, FSHashAlg alg, const void* data, size_t len, uint8_t* md)
+FSCRYPT_EXPORT
+size_t FSHash_Calc(FSCrypt* e, FSHashAlg alg, const void* data, size_t len, uint8_t* md)
 {
     const FSHashOps* ops = e->HashOps;
     if (ops && ops->Calc) {
@@ -246,7 +269,8 @@ const uint8_t* _h_empty[] = {
     &_h_empty_sm3[0]
 };
 
-const uint8_t* FITSEC_EXPORT FSHash_EmptyString(FSHashAlg alg)
+FSCRYPT_EXPORT
+const uint8_t* FSHash_EmptyString(FSHashAlg alg)
 {
     assert(alg < (sizeof(_h_empty) / sizeof(_h_empty[0])));
     return _h_empty[alg];

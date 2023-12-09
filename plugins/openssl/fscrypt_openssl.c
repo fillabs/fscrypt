@@ -285,7 +285,7 @@ static bool            OpenSSL_GenerateKeyPair (OpenSSLEngine* e, FSCurve curve,
 {
     bool ret = false;
     const EC_GROUP* g = e->groups[curve];
-    int fsize = FSCurve_FieldSize(curve);
+    int fsize = (int)FSCurve_FieldSize(curve);
     EC_KEY* k = NULL;
     if (g) {
         k = EC_KEY_new();
@@ -332,7 +332,7 @@ static bool            OpenSSL_GenerateKeyPair (OpenSSLEngine* e, FSCurve curve,
 
 static EC_KEY* _initPublicKey(OpenSSLEngine* e, const FSPublicKey* pk) {
     EC_KEY* k;
-    int fsize = FSCurve_FieldSize(pk->curve);
+    int fsize = (int) FSCurve_FieldSize(pk->curve);
     if (pk->k) {
         k = (EC_KEY*)pk->k;
         const EC_POINT* p = EC_KEY_get0_public_key(k);
@@ -374,7 +374,7 @@ static bool  OpenSSL_Verify  (OpenSSLEngine * e, const FSPublicKey * pk,
                             const FSSignature * s, const uint8_t * digest)
 {
     EC_KEY* k = _initPublicKey(e, pk);
-    int fsize = FSCurve_FieldSize(pk->curve);
+    int fsize = (int) FSCurve_FieldSize(pk->curve);
 
     ECDSA_SIG * sg = ECDSA_SIG_new();
     ECDSA_SIG_set0(sg,

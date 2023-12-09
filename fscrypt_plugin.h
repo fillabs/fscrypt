@@ -5,8 +5,8 @@
 #include <cring.h>
 #include <stdlib.h>
 #include <stdbool.h>
-#ifndef FITSEC_EXPORT
-#define FITSEC_EXPORT
+#ifndef FSCRYPT_EXPORT
+#define FSCRYPT_EXPORT
 #endif
 #ifdef __cplusplus
 extern "C" {
@@ -81,7 +81,7 @@ extern "C" {
         // to be extended in plugin
     };
 
-    FITSEC_EXPORT void FSCrypt_Register(FSCrypt* e);
+    FSCRYPT_EXPORT void FSCrypt_Register(FSCrypt* e);
 
 #ifdef __cplusplus
 }

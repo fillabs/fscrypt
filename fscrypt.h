@@ -6,8 +6,16 @@
 #include <stdbool.h>
 #include <e4c_lite.h>
 
-#ifndef FITSEC_EXPORT
-#define FITSEC_EXPORT
+#ifndef FSCRYPT_EXPORT
+# ifdef _MSC_VER
+#  ifdef LIBFSCRYPT_EXPORTS
+#   define FSCRYPT_EXPORT __declspec(dllexport)
+#  else
+#   define FSCRYPT_EXPORT __declspec(dllimport)
+#  endif
+# else
+#  define FSCRYPT_EXPORT
+# endif
 #endif
 
 #ifdef __cplusplus
@@ -16,17 +24,17 @@ extern "C" {
 
 typedef struct FSCrypt FSCrypt;
 
-FITSEC_EXPORT FSCrypt* FSCrypt_FindEngine(const char* name);
+FSCRYPT_EXPORT FSCrypt* FSCrypt_FindEngine(const char* name);
 
-FITSEC_EXPORT bool FSCrypt_InitEngine(FSCrypt* const e, const char* params);
-FITSEC_EXPORT bool FSCrypt_DeinitEngine( FSCrypt* const e, const char * params);
+FSCRYPT_EXPORT bool FSCrypt_InitEngine(FSCrypt* const e, const char* params);
+FSCRYPT_EXPORT bool FSCrypt_DeinitEngine( FSCrypt* const e, const char * params);
 
 #ifdef FSCRYPT_ASYNC
 /**
  * Check for finished async calls and execute async handlers
 */
 typedef int (FSCrypt_Handler_fn) (FSCrypt * const engine, int rc, void * const user, ...);
-FITSEC_EXPORT void FSCrypt_Proceed(FSCrypt * const e);
+FSCRYPT_EXPORT void FSCrypt_Proceed(FSCrypt * const e);
 #endif
 
 typedef enum FSHashAlg {
@@ -37,7 +45,7 @@ typedef enum FSHashAlg {
 	FSHashAlg_Max
 }FSHashAlg;
 
-static inline size_t FSHash_Size(FSHashAlg alg) {
+static inline uint8_t FSHash_Size(FSHashAlg alg) {
 	return (alg&0x01) ? 48 : 32;
 }
 
@@ -45,16 +53,19 @@ static inline uint64_t FSHash_Digest(FSHashAlg alg, const uint8_t * hash) {
     return *(uint64_t*) (hash + ((alg&0x01) ? 40 : 24));
 }
 
-size_t FITSEC_EXPORT FSHash_Calc(FSCrypt * const engine, FSHashAlg alg,
+FSCRYPT_EXPORT
+size_t FSHash_Calc(FSCrypt * const engine, FSHashAlg alg,
    			  		const void * const ptr, const size_t size,
 			  		uint8_t * const digest);
 
 #ifdef FSCRYPT_ASYNC
-int    FITSEC_EXPORT FSHash_Calc_a(FSCrypt * const engine, FSHashAlg alg,
+FSCRYPT_EXPORT
+int    FSHash_Calc_a(FSCrypt * const engine, FSHashAlg alg,
 			    	const void * const ptr, const size_t size,
 					const FSCrypt_Handler_fn * const handler, void * const user);
 #endif
 
+FSCRYPT_EXPORT
 const uint8_t* FSHash_EmptyString(FSHashAlg alg);
 
 typedef enum FSCurve {
@@ -71,7 +82,7 @@ static inline bool FSCurve_Is384(FSCurve curve) {
 	return (curve&0x02);
 }
 
-static inline size_t FSCurve_FieldSize(FSCurve curve) {
+static inline uint8_t FSCurve_FieldSize(FSCurve curve) {
 	return (curve&0x02) ? 48 : 32;
 }
 
@@ -101,22 +112,22 @@ typedef struct FSPublicKey {
 
 typedef void * FSPrivateKey;
 
-FITSEC_EXPORT FSPrivateKey*   FSKey_ImportPrivate   (FSCrypt* e, FSCurve curve, const uint8_t * data, size_t len);
-FITSEC_EXPORT void            FSKey_InitPublic 	    (FSPublicKey * k, FSCurve curve, FSPointType  pType, const uint8_t * x, const uint8_t * y);
+FSCRYPT_EXPORT FSPrivateKey*   FSKey_ImportPrivate   (FSCrypt* e, FSCurve curve, const uint8_t * data, size_t len);
+FSCRYPT_EXPORT void            FSKey_InitPublic 	    (FSPublicKey * k, FSCurve curve, FSPointType  pType, const uint8_t * x, const uint8_t * y);
 
-FITSEC_EXPORT FSPrivateKey*   FSKey_Generate        (FSCrypt* e, FSCurve curve, FSPublicKey * k);
-FITSEC_EXPORT bool            FSKey_CalculatePublic (FSCrypt* e, const FSPrivateKey* priv, FSPublicKey* pub);
+FSCRYPT_EXPORT FSPrivateKey*   FSKey_Generate        (FSCrypt* e, FSCurve curve, FSPublicKey * k);
+FSCRYPT_EXPORT bool            FSKey_CalculatePublic (FSCrypt* e, const FSPrivateKey* priv, FSPublicKey* pub);
 
-FITSEC_EXPORT void            FSKey_FreePrivate     (FSCrypt* e, FSPrivateKey* k);
-FITSEC_EXPORT void            FSKey_CleanPublic     (FSCrypt* e, FSPublicKey * k);
+FSCRYPT_EXPORT void            FSKey_FreePrivate     (FSCrypt* e, FSPrivateKey* k);
+FSCRYPT_EXPORT void            FSKey_CleanPublic     (FSCrypt* e, FSPublicKey * k);
 
-FITSEC_EXPORT bool            FSKey_ExportPublic    (FSCrypt* e, FSCurve curve, const FSPrivateKey * pK, FSPublicKey * k);
+FSCRYPT_EXPORT bool            FSKey_ExportPublic    (FSCrypt* e, FSCurve curve, const FSPrivateKey * pK, FSPublicKey * k);
 
-FITSEC_EXPORT size_t          FSKey_Derive          (FSCrypt* e, const FSPublicKey* k, const FSPrivateKey* eph,
+FSCRYPT_EXPORT size_t          FSKey_Derive          (FSCrypt* e, const FSPublicKey* k, const FSPrivateKey* eph,
 														const void* salt, size_t salt_len,
 														void* digest, size_t digest_len);
 
-FITSEC_EXPORT bool            FSKey_ReconstructPublic(FSCrypt* e, const FSPublicKey* rv, 
+FSCRYPT_EXPORT bool            FSKey_ReconstructPublic(FSCrypt* e, const FSPublicKey* rv, 
 														const FSPublicKey* ca, const unsigned char * hash);
 
 
@@ -126,15 +137,15 @@ typedef struct FSSignature {
     uint8_t * s;
 }FSSignature;
 
-FITSEC_EXPORT bool FSSignature_Sign(FSCrypt* e, FSSignature * s, const FSPrivateKey* key, const uint8_t * digest);
-FITSEC_EXPORT bool FSSignature_Sign_ex(FSCrypt* e, FSSignature * s, const FSPrivateKey* key, const uint8_t * digest, const uint8_t * k);
+FSCRYPT_EXPORT bool FSSignature_Sign(FSCrypt* e, FSSignature * s, const FSPrivateKey* key, const uint8_t * digest);
+FSCRYPT_EXPORT bool FSSignature_Sign_ex(FSCrypt* e, FSSignature * s, const FSPrivateKey* key, const uint8_t * digest, const uint8_t * k);
 
-FITSEC_EXPORT bool FSSignature_Verify(FSCrypt* e, const FSSignature * s, const FSPublicKey* pk, const uint8_t * digest);
+FSCRYPT_EXPORT bool FSSignature_Verify(FSCrypt* e, const FSSignature * s, const FSPublicKey* pk, const uint8_t * digest);
 
 typedef enum {
 	FS_HMAC256
 } FSMAC;
-FITSEC_EXPORT size_t FSCrypt_MAC(FSCrypt* e, FSMAC alg, const uint8_t* data, size_t size, const uint8_t* key, size_t key_len, uint8_t* out);
+FSCRYPT_EXPORT size_t FSCrypt_MAC(FSCrypt* e, FSMAC alg, const uint8_t* data, size_t size, const uint8_t* key, size_t key_len, uint8_t* out);
 
 typedef enum {
 	FS_AES_128_CCM = 0,
@@ -143,21 +154,21 @@ typedef enum {
 	FSSymmAlg_Max
 }FSSymmAlg;
 
-static inline size_t FSSymm_KeySize(FSSymmAlg alg) {
+static inline uint8_t FSSymm_KeySize(FSSymmAlg alg) {
 	return 16;
 }
-const char * FSSymm_AlgName(FSSymmAlg alg);
+FSCRYPT_EXPORT const char * FSSymm_AlgName(FSSymmAlg alg);
 
-FITSEC_EXPORT size_t FSSymm_Encrypt(FSCrypt* e, FSSymmAlg alg,
+FSCRYPT_EXPORT size_t FSSymm_Encrypt(FSCrypt* e, FSSymmAlg alg,
                                         const uint8_t* key, const uint8_t* nonce,
                                         const uint8_t* in_buf, size_t in_size,
                                         uint8_t* out_buf, size_t out_size);
-FITSEC_EXPORT size_t FSSymm_Decrypt(FSCrypt* e, FSSymmAlg alg,
+FSCRYPT_EXPORT size_t FSSymm_Decrypt(FSCrypt* e, FSSymmAlg alg,
                                         const uint8_t* key, const uint8_t* nonce,
                                         const uint8_t* in_buf, size_t in_size,
                                         uint8_t* out_buf, size_t out_size);
 
-FITSEC_EXPORT void   FS_Random(FSCrypt* e, void* ptr, size_t const len);
+FSCRYPT_EXPORT void   FS_Random(FSCrypt* e, void* ptr, size_t const len);
 
 
 #ifdef __cplusplus
