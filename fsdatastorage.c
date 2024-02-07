@@ -76,8 +76,10 @@ FSDS_EXPORT
 FSDataItem * FSDataItem_New(size_t len)
 {
     FSDataItem * d = cnew0_ex(FSDataItem, len);
-    d->len = len;
-    cring_init(&d->q);
+    if(d){
+        d->len = len;
+        cring_init(&d->q);
+    }
     return d;
 }
 
@@ -85,9 +87,9 @@ FSDS_EXPORT
 void FSDataItem_Renew(FSDataStorage * storage, uint32_t curTime, FSDataItem * d, uint32_t duration)
 {
 #ifdef FS_STOREDDATA_DEBUG
-    fprintf(stderr, "%-5.5s [%u] UPD " PrHID8 " (%u)", storage->name, curTime, d->key, d->end);
+    fprintf(stderr, "%-5.5s [%u] UPD " PrHID8 " (end=%u data=", storage->name, curTime, d->key, d->end);
     for(int i=0; i < 8; i++) fprintf(stderr,  "%02X", d->data[i]);
-    fputc('\n', stderr); 
+    fprintf(stderr,")\n"); 
 #endif
     cring_erase(&d->q);
     if(curTime){
@@ -109,17 +111,17 @@ void FSDataItem_Put (FSDataStorage * storage, uint32_t curTime, FSDataItem * d, 
     }
     d->end = curTime + duration;
 #ifdef FS_STOREDDATA_DEBUG
-    fprintf(stderr, "%-5.5s [%u] PUT " PrHID8 " (%u)", storage->name, curTime, d->key, d->end);
+    fprintf(stderr, "%-5.5s [%u] PUT " PrHID8 " (end=%u data=", storage->name, curTime, d->key, d->end);
     for(int i=0; i < 8; i++) fprintf(stderr,  "%02X", d->data[i]);
-    fputc('\n', stderr); 
+    fprintf(stderr, ")\n"); 
 #endif
     cring_erase(&d->q); // erase it in any case to prevent double-free
     FSDataItem * o = (FSDataItem *)ctree_splay_add(&storage->tree, _FSDataItem_compare_with_node, &d->node, true);
     if(d != o){
 #ifdef FS_STOREDDATA_DEBUG
-        fprintf(stderr, "               RM  OLD " PrHID8 " (%u)", o->key, o->end);
+        fprintf(stderr, "               RM  OLD " PrHID8 " (end=%u data=", o->key, o->end);
         for(int i=0; i < 8; i++) fprintf(stderr,  "%02X", o->data[i]);
-        fputc('\n', stderr); 
+        fprintf(stderr, ")\n"); 
 #endif
         cring_erase(&o->q);
         storage->free(o, storage->user);
@@ -136,14 +138,14 @@ FSDataItem *  FSDataItem_Get (FSDataStorage * storage, uint32_t curTime, uint64_
     FSDataItem * d = (FSDataItem *)ctree_splay_del(&storage->tree, _FSDataItem_compare_with_key, &key);
     if(d){
 #ifdef FS_STOREDDATA_DEBUG
-        fprintf(stderr, "%-5.5s [%u] GET " PrHID8 " (0x%u)", storage->name, curTime, d->key, d->end);
+        fprintf(stderr, "%-5.5s [%u] GET " PrHID8 " (end=%u data=", storage->name, curTime, d->key, d->end);
         for(int i=0; i < 8; i++) fprintf(stderr,  "%02X", d->data[i]);
-        fputc('\n', stderr); 
+        fprintf(stderr, ")\n"); 
 #endif
         cring_erase(&d->q);
 #ifdef FS_STOREDDATA_DEBUG
     }else{
-        fprintf(stderr, "%-5.5s [%u] GET " PrHID8 " (none)\n", storage->name, curTime, key);
+        fprintf(stderr, "%-5.5s [%u] GET " PrHID8 " (not found)\n", storage->name, curTime, key);
 #endif
     }
     return d;
@@ -158,11 +160,11 @@ FSDataItem *  FSDataItem_Find (FSDataStorage * storage, uint32_t curTime, uint64
     FSDataItem * d = (FSDataItem *)ctree_splay_find(&storage->tree, _FSDataItem_compare_with_key, &key);
 #ifdef FS_STOREDDATA_DEBUG
     if(d){
-        fprintf(stderr, "%-5.5s [%u] FND " PrHID8 " (%u)", storage->name, curTime, d->key, d->end);
+        fprintf(stderr, "%-5.5s [%u] FND " PrHID8 " (end=%u data=", storage->name, curTime, d->key, d->end);
         for(int i=0; i < 8; i++) fprintf(stderr,  "%02X", d->data[i]);
-        fputc('\n', stderr); 
+        fprintf(stderr, ")\n"); 
     }else{
-        fprintf(stderr, "%-5.5s [%u] FND " PrHID8 " (none)\n", storage->name, curTime, key);
+        fprintf(stderr, "%-5.5s [%u] FND " PrHID8 " (not found)\n", storage->name, curTime, key);
     }
 #endif
     return d;
@@ -172,9 +174,9 @@ FSDS_EXPORT
 void FSDataItem_Del  (FSDataStorage * storage, uint32_t curTime, FSDataItem * d)
 {
 #ifdef FS_STOREDDATA_DEBUG
-    fprintf(stderr, "%-5.5s [%u] DEL " PrHID8 " (%u)\n", storage->name, curTime, d->key, d->end);
+    fprintf(stderr, "%-5.5s [%u] DEL " PrHID8 " (end=%u data=", storage->name, curTime, d->key, d->end);
     for(int i=0; i < 8; i++) fprintf(stderr,  "%02X", d->data[i]);
-    fputc('\n', stderr); 
+    fprintf(stderr, ")\n"); 
 #endif
     ctree_splay_del_node(&storage->tree, &d->node);
     cring_erase(&d->q);

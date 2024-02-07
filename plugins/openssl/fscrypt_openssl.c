@@ -308,7 +308,7 @@ static bool            OpenSSL_GenerateKeyPair (OpenSSLEngine* e, FSCurve curve,
                         BN_bn2binpad(y, publicKey->point.y, fsize);
                     }
                     else {
-                        publicKey->point.type = BN_is_odd(y) ? FS_COMPRESSED_LSB_Y_1 : FS_COMPRESSED_LSB_Y_1;
+                        publicKey->point.type = BN_is_odd(y) ? FS_COMPRESSED_LSB_Y_1 : FS_COMPRESSED_LSB_Y_0;
                     }
 
                     BN_free(x);
