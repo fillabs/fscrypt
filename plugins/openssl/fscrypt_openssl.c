@@ -86,15 +86,16 @@ static	size_t  OpenSSL_Random     (OpenSSLEngine * e, void* buf, size_t len);
 
 static  size_t      OpenSSL_HashCalc(OpenSSLEngine* e, FSHashAlg alg, const void* data, size_t len, uint8_t* md);
 
-static bool            OpenSSL_CalculatePublicKey  (OpenSSLEngine* c, const FSPrivateKey* priv, FSPublicKey * k);
 static FSPrivateKey*   OpenSSL_NewPrivateKey   (OpenSSLEngine* c, FSCurve curve, const uint8_t * data, size_t length);
 static bool            OpenSSL_GenerateKeyPair (OpenSSLEngine* c, FSCurve curve,
                                                 FSPrivateKey** pPrivateKey, FSPublicKey * publicKey);
 static void            OpenSSL_FreePrivateKey  (OpenSSLEngine* c, FSPrivateKey* k);
 static void            OpenSSL_FreePublicKey   (OpenSSLEngine* c, FSPublicKey* k);
 
-static bool            OpenSSL_ExportPublic    (OpenSSLEngine* c, FSCurve curve, 
+static bool            OpenSSL_ExportPublic    (OpenSSLEngine* c,  
                                                 const FSPrivateKey* k, FSPublicKey * publicKey);
+static size_t          OpenSSL_ExportPrivate   (OpenSSLEngine* c, 
+                                                const FSPrivateKey* k, uint8_t * buf);
 static size_t          OpenSSL_DeriveKey       (OpenSSLEngine* c, const FSPublicKey* k, const FSPrivateKey* eph,
                                                 const void* salt, size_t salt_len,
                                                 void* digest, size_t digest_len);
@@ -131,7 +132,7 @@ static FSEccKeyOps _keyOps = {
     OpenSSL_FreePrivateKey,
     OpenSSL_FreePublicKey,
     OpenSSL_ExportPublic,
-    OpenSSL_CalculatePublicKey,
+    OpenSSL_ExportPrivate,
     OpenSSL_ReconstructPublic,
     OpenSSL_DeriveKey
 };
@@ -255,6 +256,24 @@ static void OpenSSL_FreePublicKey  (OpenSSLEngine* c, FSPublicKey* k) {
     }
 }
 
+static size_t          OpenSSL_ExportPrivate   (OpenSSLEngine* c,  
+                                                const FSPrivateKey* k, uint8_t * buf)
+{
+    if(k){
+        const EC_GROUP * g = EC_KEY_get0_group((const EC_KEY *)k);
+        if(g){
+            int fsize = (EC_GROUP_get_degree(g) + 7) / 8;
+            const BIGNUM * b = EC_KEY_get0_private_key((const EC_KEY *)k);
+            if(b){
+                if(fsize == BN_bn2binpad(b, buf, fsize)){
+                    return fsize;
+                }
+            }
+        }
+    }
+    return 0;
+}
+/*
 static bool OpenSSL_CalculatePublicKey  (OpenSSLEngine* c, const FSPrivateKey* p, FSPublicKey * pub) {
     if(pub->k == NULL || pub->k != p){
         if(pub->k){
@@ -279,6 +298,7 @@ static bool OpenSSL_CalculatePublicKey  (OpenSSLEngine* c, const FSPrivateKey* p
     }
     return false;
 }
+*/
 
 static bool            OpenSSL_GenerateKeyPair (OpenSSLEngine* e, FSCurve curve,
                                                 FSPrivateKey** pPrivateKey, FSPublicKey * publicKey)
@@ -458,7 +478,7 @@ static size_t          OpenSSL_DeriveKey       (OpenSSLEngine* c, const FSPublic
     return OpenSSL_KDF2(digest, digest_len, ss, l, salt, salt_len);
 }
 
-static bool            OpenSSL_ExportPublic    (OpenSSLEngine* e, FSCurve curve, 
+static bool            OpenSSL_ExportPublic    (OpenSSLEngine* e,  
                                                 const FSPrivateKey* _priv, FSPublicKey * publicKey)
 {
     EC_KEY * priv = (EC_KEY *)_priv;

@@ -116,12 +116,12 @@ FSCRYPT_EXPORT FSPrivateKey*   FSKey_ImportPrivate   (FSCrypt* e, FSCurve curve,
 FSCRYPT_EXPORT void            FSKey_InitPublic 	    (FSPublicKey * k, FSCurve curve, FSPointType  pType, const uint8_t * x, const uint8_t * y);
 
 FSCRYPT_EXPORT FSPrivateKey*   FSKey_Generate        (FSCrypt* e, FSCurve curve, FSPublicKey * k);
-FSCRYPT_EXPORT bool            FSKey_CalculatePublic (FSCrypt* e, const FSPrivateKey* priv, FSPublicKey* pub);
 
 FSCRYPT_EXPORT void            FSKey_FreePrivate     (FSCrypt* e, FSPrivateKey* k);
 FSCRYPT_EXPORT void            FSKey_CleanPublic     (FSCrypt* e, FSPublicKey * k);
 
-FSCRYPT_EXPORT bool            FSKey_ExportPublic    (FSCrypt* e, FSCurve curve, const FSPrivateKey * pK, FSPublicKey * k);
+FSCRYPT_EXPORT bool            FSKey_ExportPublic    (FSCrypt* e, const FSPrivateKey * pK, FSPublicKey * k);
+FSCRYPT_EXPORT size_t          FSKey_ExportPrivate   (FSCrypt* e, const FSPrivateKey * pK, uint8_t * buf);
 
 FSCRYPT_EXPORT size_t          FSKey_Derive          (FSCrypt* e, const FSPublicKey* k, const FSPrivateKey* eph,
 														const void* salt, size_t salt_len,

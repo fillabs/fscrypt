@@ -69,9 +69,9 @@ void FSKey_InitPublic (FSPublicKey * k, FSCurve curve, FSPointType  pType, const
 }
 
 FSCRYPT_EXPORT
-bool FSKey_ExportPublic (FSCrypt* e, FSCurve curve, const FSPrivateKey * pK, FSPublicKey * k)
+bool FSKey_ExportPublic (FSCrypt* e, const FSPrivateKey * pK, FSPublicKey * k)
 {
-    return e->KeyOps->ExportPublic(e, curve, pK, k);
+    return e->KeyOps->ExportPublic(e, pK, k);
 }
 
 FSCRYPT_EXPORT
@@ -129,9 +129,9 @@ bool FSKey_ReconstructPublic(FSCrypt* e, const FSPublicKey* rv, const FSPublicKe
 }
 
 FSCRYPT_EXPORT
-bool FSKey_CalculatePublic(FSCrypt* e, const FSPrivateKey* priv, FSPublicKey* pub)
+size_t FSKey_ExportPrivate   (FSCrypt* e, const FSPrivateKey * pK, uint8_t * buf)
 {
-    return e->KeyOps->Calculate(e, priv, pub);
+    return e->KeyOps->ExportPrivate(e, pK, buf);
 }
 
 /*

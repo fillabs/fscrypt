@@ -32,9 +32,9 @@ extern "C" {
                                         FSPrivateKey** pPrivateKey, FSPublicKey * publicKey);
         void            (*FreePrivate) (FSCrypt* c, FSPrivateKey* k);
         void            (*FreePublic)  (FSCrypt* c, FSPublicKey* k);
-        bool            (*ExportPublic)(FSCrypt* c, FSCurve curve, 
+        bool            (*ExportPublic)(FSCrypt* c,  
                                         const FSPrivateKey* k, FSPublicKey * publicKey);
-        bool            (*Calculate)   (FSCrypt* c, const FSPrivateKey* priv, FSPublicKey * k);
+        size_t          (*ExportPrivate)(FSCrypt* c, const FSPrivateKey* priv, uint8_t * buf);
         bool            (*ReconstructPublic) (FSCrypt* c, FSPublicKey* rv, const FSPublicKey * ca, const uint8_t * digest);
         size_t          (*Derive)      (FSCrypt* e,
                                         const FSPublicKey* k, const FSPrivateKey* eph,
