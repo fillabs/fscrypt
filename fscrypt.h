@@ -48,8 +48,8 @@ typedef enum FSHashAlg {
 static inline uint8_t FSHash_Size(FSHashAlg alg) {
 	return (alg&0x01) ? 48 : 32;
 }
-
-static inline uint64_t FSHash_Digest(FSHashAlg alg, const uint8_t * hash) {
+#define FSHash_Digest(SIZE,PTR) (*(uint64_t*)((PTR)-8+SIZE))
+static inline uint64_t FSHash_DigestByHashAlg(FSHashAlg alg, const uint8_t * hash) {
     return *(uint64_t*) (hash + ((alg&0x01) ? 40 : 24));
 }
 
