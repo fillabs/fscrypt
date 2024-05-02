@@ -26,7 +26,7 @@ static void _FSDataItem_purge(FSDataStorage * storage, uint32_t curTime)
             break;
 #ifdef FS_STOREDDATA_DEBUG
         fprintf(stderr, "%-5.5s [%u] EXP " PrHID8 "(%u):", storage->name, curTime, d->key, d->end);
-        for(int i=0; i < 8; i++) fputc(d->data[0], stderr);
+        for(int i=0; i < 8; i++) fprintf(stderr,  "%02X", d->data[i]);
         fputc('\n', stderr); 
 #endif
         ctree_splay_del_node(&storage->tree, &d->node);
