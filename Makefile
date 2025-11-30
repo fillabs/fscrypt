@@ -2,7 +2,6 @@ PROJECTROOT ?= ..
 BUILDROOT   ?= $(PROJECTROOT)/build
 CSHAREDDIR  ?= $(PROJECTROOT)/cshared
 PROJECT      = fscrypt
-DEBUG        = yes
 
 packages    := openssl cshared
 cflags      := -Wno-dangling-else -std=c99
